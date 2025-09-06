@@ -35,11 +35,17 @@ WORKDIR /var/www/html
 
 # Copy application files
 COPY src/ /var/www/html/
+RUN mkdir -p /var/www/html/public
+COPY src/public/ /var/www/html/public/
+
+# Create a startup script
+COPY start.sh /var/www/html/start.sh
+RUN chmod +x /var/www/html/start.sh
 
 # Set environment variable for Cloud Run
 ENV PORT=8080
 
 EXPOSE 8080
 
-# Use PHP built-in web server for Cloud Run - public klasöründen başlat
-CMD ["php", "-S", "0.0.0.0:8080", "-t", "src/public", "src/public/index.php"]
+# Use PHP built-in web server for Cloud Run
+CMD ["/var/www/html/start.sh"]

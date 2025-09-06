@@ -3,7 +3,21 @@ services:
   app:
     build: .
     ports:
-      - "80:8080"
+      - "8080:8080"
     environment:
-      - APP_ENV=production
-    restart: unless-stopped
+      - APP_ENV=development
+      - PORT=8080
+      - DB_HOST=34.56.16.173
+      - DB_NAME=schopi-api
+      - DB_USER=root
+          # - DB_PASSWORD=SchopiDB2024!   # Moved to secrets
+        restart: unless-stopped
+        volumes:
+          - ./src:/var/www/html/src
+        command: bash -c "chmod +x /var/www/html/start.sh && /var/www/html/start.sh"
+        secrets:
+          - db_password
+    
+    secrets:
+      db_password:
+        file: ./db_password.txt
