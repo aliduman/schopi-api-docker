@@ -31,7 +31,6 @@ RUN pecl install ev && docker-php-ext-enable ev
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-RUN composer global require hirak/prestissimo
 
 # Copy application files
 WORKDIR /var/www/html

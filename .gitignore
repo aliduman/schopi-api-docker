@@ -18,3 +18,5 @@ key.json
 ehthumbs.db
 Thumbs.db
 .idea
+vendor
+composer.lock

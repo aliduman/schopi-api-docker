@@ -1,5 +1,5 @@
 {
-    "name": "php-dev-environment",
+    "name": "schopi/api-docker",
     "description": "PHP Development Environment with MySQL, Redis, and Socket support",
     "type": "project",
     "require": {
