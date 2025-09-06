@@ -3,7 +3,7 @@
  * Ana Giriş Noktası - Tüm istekler buradan yönlendirilir
  */
 
-// Request URI'yi al
+// REQUEST_URI'yi doğru şekilde işle ve $_GET['url'] değişkenini oluştur
 $request_uri = $_SERVER['REQUEST_URI'];
 $script_name = $_SERVER['SCRIPT_NAME'];
 
@@ -21,6 +21,9 @@ if ($base_path !== '') {
 
 // Query string'i kaldır
 $request_path = strtok($request_path, '?');
+
+// $_GET['url'] değişkenini oluştur - API routing için gerekli
+$_GET['url'] = trim($request_path, '/');
 
 // Özel route'ları kontrol et
 $special_routes = [
