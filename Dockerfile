@@ -1,4 +1,4 @@
-FROM php:8.2-fpm
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -33,8 +33,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-COPY ./php/www.conf /usr/local/etc/php-fpm.d/www.conf
+# Copy application files
+COPY src/ /var/www/html/
 
-EXPOSE 9000
+# Set environment variable for Cloud Run
+ENV PORT=8080
 
-CMD ["php-fpm"]
+EXPOSE 8080
+
+# Use PHP built-in web server for Cloud Run
+CMD ["php", "-S", "0.0.0.0:8080"]

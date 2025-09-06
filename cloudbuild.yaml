@@ -22,7 +22,9 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--port'
-      - '9000'
+      - '8080'
+      - '--set-env-vars'
+      - 'PORT=8080'
     secretEnv: ['SERVICE_ACCOUNT_KEY']
 
 availableSecrets:
