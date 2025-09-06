@@ -1,5 +1,43 @@
 <?php
+/**
+ * Ana Giriş Noktası - Tüm istekler buradan yönlendirilir
+ */
 
+// Request URI'yi al
+$request_uri = $_SERVER['REQUEST_URI'];
+$script_name = $_SERVER['SCRIPT_NAME'];
+
+// Base path'i hesapla
+$base_path = dirname($script_name);
+if ($base_path === '/') {
+    $base_path = '';
+}
+
+// Request path'i temizle
+$request_path = $request_uri;
+if ($base_path !== '') {
+    $request_path = substr($request_uri, strlen($base_path));
+}
+
+// Query string'i kaldır
+$request_path = strtok($request_path, '?');
+
+// Özel route'ları kontrol et
+$special_routes = [
+    '/health' => 'health.php',
+    '/health.php' => 'health.php',
+    '/db-test' => 'db-test.php',
+    '/db-test.php' => 'db-test.php',
+];
+
+// Özel route'ları kontrol et
+if (isset($special_routes[$request_path])) {
+    // Database config'i yükle
+    require_once '../app/config/database.php';
+    
+    // Özel dosyayı include et
+    include __DIR__ . '/' . $special_routes[$request_path];
+} else {
     // CORS için başlıklar
     header('Access-Control-Allow-Origin: *');
     header('Content-Type: application/json');
@@ -13,7 +51,7 @@
         return 0;
     }
 
-    // bootstrap.php dosyasının doğru yolunu sağla
+    // Ana uygulamayı başlat (REST API)
     require_once '../app/bootstrap.php';
 
     // Core sınıfını başlat
@@ -23,4 +61,5 @@
         echo json_encode(['error' => $e->getMessage()]);
         exit;
     }
+}
 ?>
