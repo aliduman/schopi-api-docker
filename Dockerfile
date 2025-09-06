@@ -33,14 +33,32 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy application files
-COPY src/ /var/www/html/
-RUN mkdir -p /var/www/html/public
-COPY src/public/ /var/www/html/public/
+# Copy application files - create the proper directory structure
+COPY src/ /var/www/html/src/
+RUN mkdir -p /var/www/html/public /var/www/html/app
+
+# Copy public files to the public directory
+RUN cp -rf /var/www/html/src/public/* /var/www/html/public/
+
+# Copy app files to the app directory
+RUN cp -rf /var/www/html/src/app/* /var/www/html/app/
+
+# Fix permissions
+RUN chmod -R 755 /var/www/html
+
+# Create a health check file
+COPY src/public/_healthz /var/www/html/public/_healthz
 
 # Create a startup script
 COPY start.sh /var/www/html/start.sh
 RUN chmod +x /var/www/html/start.sh
+
+# Add fallback bootstrap file if needed
+COPY src/app/bootstrap.php.fallback /var/www/html/app/bootstrap.php.fallback
+RUN if [ ! -f "/var/www/html/app/bootstrap.php" ]; then \
+    echo "Using fallback bootstrap.php"; \
+    cp /var/www/html/app/bootstrap.php.fallback /var/www/html/app/bootstrap.php; \
+fi
 
 # Set environment variable for Cloud Run
 ENV PORT=8080

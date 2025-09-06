@@ -11,6 +11,15 @@ if [ ! -d "src/public" ]; then
   exit 1
 fi
 
+if [ ! -d "src/app" ]; then
+  echo "Error: src/app directory not found!"
+  exit 1
+fi
+
+if [ ! -f "src/app/bootstrap.php" ]; then
+  echo "Warning: src/app/bootstrap.php not found - this may cause issues!"
+fi
+
 # Step 2: Ensure startup script is executable
 echo "Making startup script executable..."
 chmod +x start.sh
@@ -28,12 +37,30 @@ echo "Waiting for container to start..."
 sleep 5
 
 # Step 6: Test the health endpoint
-echo "Testing health endpoint..."
-curl -s http://localhost:8080/_health || curl -s http://localhost:8080/health.php
-curl -s http://localhost:8080/_health
-# Step 7: Stop the test container
+echo "Testing health endpoints..."
+echo "Testing _healthz endpoint (simplified):"
+curl -s http://localhost:8080/public/_healthz
+echo
+
+echo "Testing health.php endpoint (if it exists):"
+curl -s http://localhost:8080/public/health.php
+echo
+
+# Step 7: Get container logs
+echo "Container logs:"
+docker logs $CONTAINER_ID
+
+# Step 8: Check directory structure inside the container
+echo "Directory structure inside container:"
+docker exec $CONTAINER_ID find /var/www/html -type d | sort
+
+echo "Looking for bootstrap.php inside container:"
+docker exec $CONTAINER_ID find /var/www/html -name "bootstrap.php" || echo "bootstrap.php not found in container!"
+
+# Step 9: Stop the test container
 echo "Stopping test container..."
 docker stop $CONTAINER_ID
 
 echo "==== Preparation complete. Ready for deployment ===="
-echo "Run gcloud builds submit to deploy to Cloud Run"
+echo "Run the following command to deploy to Cloud Run:"
+echo "gcloud builds submit --config cloudbuild.yaml"

@@ -29,7 +29,19 @@ steps:
       - '512Mi'
       - '--timeout'
       - '300s'
-    secretEnv: ['SERVICE_ACCOUNT_KEY']
+      - '--cpu'
+      - '1'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--http-health-check'
+      - '/public/_healthz'
+      - '--health-check-timeout'
+      - '5s'
+      - '--health-check-interval'
+      - '30s'
+    secretEnv: ['SERVICE_ACCOUNT_KEY', 'DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']
 
 availableSecrets:
   secretManager:

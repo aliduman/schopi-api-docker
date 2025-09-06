@@ -1,0 +1,91 @@
+<?php
+/**
+ * Simplified bootstrap file that will be used if the real bootstrap.php is not found
+ * This helps the application to start and show a more detailed error
+ */
+
+// Define application root
+define('APPROOT', dirname(__FILE__) . '/');
+
+// Debug function
+function debug_log($message) {
+    error_log('[BOOTSTRAP DEBUG] ' . $message);
+}
+
+debug_log('Using fallback bootstrap.php');
+
+// Check if the real bootstrap file exists somewhere else
+$possible_paths = [
+    '/var/www/html/app/bootstrap.php',
+    '/var/www/html/src/app/bootstrap.php',
+    dirname(__FILE__) . '/bootstrap.php.orig'
+];
+
+foreach ($possible_paths as $path) {
+    if (file_exists($path) && $path !== __FILE__) {
+        debug_log('Found real bootstrap at: ' . $path);
+        require_once $path;
+        return;
+    }
+}
+
+// If we get here, we couldn't find the real bootstrap
+debug_log('Could not find real bootstrap file');
+
+// Set up minimal functionality
+class Core {
+    public function __construct() {
+        http_response_code(500);
+        echo json_encode([
+            'status' => false,
+            'message' => 'Bootstrap error: Application files not found or incorrectly structured',
+            'error' => [
+                'type' => 'Bootstrap Error',
+                'details' => 'The application bootstrap file is missing or inaccessible'
+            ],
+            'debug' => [
+                'search_paths' => $possible_paths,
+                'current_dir' => dirname(__FILE__),
+                'app_root' => APPROOT
+            ]
+        ]);
+        exit;
+    }
+}
+
+// Minimal routing functionality
+class Routing {
+    public $routes = [];
+    
+    public function get($path, $handler) {
+        $this->routes['GET'][$path] = ['class' => $handler];
+    }
+    
+    public function post($path, $handler) {
+        $this->routes['POST'][$path] = ['class' => $handler];
+    }
+    
+    public function put($path, $handler) {
+        $this->routes['PUT'][$path] = ['class' => $handler];
+    }
+    
+    public function delete($path, $handler) {
+        $this->routes['DELETE'][$path] = ['class' => $handler];
+    }
+    
+    public function auto($path, $handler) {
+        $this->get($path, $handler . '::get');
+        $this->post($path, $handler . '::post');
+        $this->put($path, $handler . '::put');
+        $this->delete($path, $handler . '::delete');
+    }
+}
+
+// Required classes for the application to initialize
+class Api {}
+class Database {}
+class Model {}
+class File {}
+class Validate {}
+class InvalidSignatureException extends Exception {}
+class Jwt {}

@@ -1,0 +1,9 @@
+<?php
+// Simple health check endpoint that doesn't depend on the rest of the application
+header('Content-Type: application/json');
+echo json_encode([
+    'status' => 'healthy',
+    'timestamp' => date('c'),
+    'server' => 'PHP/' . phpversion(),
+    'environment' => getenv('APP_ENV') ?: 'undefined'
+]);

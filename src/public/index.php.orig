@@ -1,0 +1,82 @@
+<?php
+// This is a copy of the original index.php, renamed to index.php.orig
+// It will be included by debug_index.php once the correct bootstrap path is determined
+
+/**
+ * Ana Giriş Noktası - Tüm istekler buradan yönlendirilir
+ */
+
+// Request URI'yi al
+$request_uri = $_SERVER['REQUEST_URI'];
+$script_name = $_SERVER['SCRIPT_NAME'];
+
+// Base path'i hesapla
+$base_path = dirname($script_name);
+if ($base_path === '/') {
+    $base_path = '';
+}
+
+// Request path'i temizle
+$request_path = $request_uri;
+if ($base_path !== '') {
+    $request_path = substr($request_uri, strlen($base_path));
+}
+
+// Query string'i kaldır
+$request_path = strtok($request_path, '?');
+
+// Özel route'ları kontrol et
+$special_routes = [
+    '/health' => 'health.php',
+    '/health.php' => 'health.php',
+    '/db-test' => 'db-test.php',
+    '/db-test.php' => 'db-test.php',
+];
+
+// Özel route'ları kontrol et
+if (isset($special_routes[$request_path])) {
+    // Database config'i yükle
+    if (defined('BOOTSTRAP_PATH')) {
+        $database_path = dirname(BOOTSTRAP_PATH) . '/config/database.php';
+        if (file_exists($database_path)) {
+            require_once $database_path;
+        } else {
+            // Try alternative paths
+            require_once __DIR__ . '/../app/config/database.php';
+        }
+    } else {
+        require_once '../app/config/database.php';
+    }
+    
+    // Özel dosyayı include et
+    include __DIR__ . '/' . $special_routes[$request_path];
+} else {
+    // CORS için başlıklar
+    header('Access-Control-Allow-Origin: *');
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 1000');
+    header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Max-Age, Access-Control-Allow-Credentials, Access-Control-Allow-Methods, Access-Control-Allow-Origin, Access-Control-Allow-Headers');
+    header('HTTP/1.1 200');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        return 0;
+    }
+
+    // Ana uygulamayı başlat (REST API)
+    if (defined('BOOTSTRAP_PATH')) {
+        require_once BOOTSTRAP_PATH;
+    } else {
+        require_once '../app/bootstrap.php';
+    }
+
+    // Core sınıfını başlat
+    try {
+        $init = new Core();
+    } catch (Exception $e) {
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
+    }
+}
+?>
