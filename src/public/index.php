@@ -52,7 +52,8 @@ if (isset($special_routes[$request_path])) {
     }
 
     // Ana uygulamayı başlat (REST API)
-    require_once '../app/bootstrap.php';
+    // Doğru yolu kullanarak bootstrap.php dosyasını dahil et
+    require_once __DIR__ . '/../app/bootstrap.php';
 
     // Core sınıfını başlat
     try {
