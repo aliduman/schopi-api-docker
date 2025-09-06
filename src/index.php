@@ -1,17 +1,31 @@
-<?php
-phpinfo();
-
-// MySQL bağlantı testi
-try {
-    $pdo = new PDO('mysql:host=mysql;dbname=development', 'devuser', 'devpassword');
-    echo "<h2>MySQL Bağlantısı: ✅ Başarılı</h2>";
-} catch (PDOException $e) {
-    echo "<h2>MySQL Bağlantısı: ❌ Başarısız - " . $e->getMessage() . "</h2>";
-}
-
-// Socket testi
-if (extension_loaded('sockets')) {
-    echo "<h2>Socket Extension: ✅ Yüklü</h2>";
-} else {
-    echo "<h2>Socket Extension: ❌ Yüklü Değil</h2>";
-}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My App - Deployed to Google Cloud</title>
+    <style>
+        body { font-family: Arial; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
+        .success { color: #28a745; }
+        .info { background: #e3f2fd; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="success">🚀 Başarılı Deployment!</h1>
+        <p>Uygulamanız Google Cloud'da çalışıyor.</p>
+        
+        <div class="info">
+            <h3>Sistem Bilgileri</h3>
+            <p><strong>PHP Version:</strong> <?= PHP_VERSION ?></p>
+            <p><strong>Server Time:</strong> <?= date('Y-m-d H:i:s') ?></p>
+            <p><strong>Environment:</strong> <?= $_ENV['APP_ENV'] ?? 'production' ?></p>
+        </div>
+        
+        <h3>🔗 Faydalı Linkler</h3>
+        <ul>
+            <li><a href="/health.php">Health Check</a></li>
+            <li><a href="https://console.cloud.google.com">Google Cloud Console</a></li>
+        </ul>
+    </div>
+</body>
+</html>
