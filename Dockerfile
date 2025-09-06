@@ -29,12 +29,13 @@ RUN docker-php-ext-install \
 RUN pecl install memcached && docker-php-ext-enable memcached
 RUN pecl install ev && docker-php-ext-enable ev
 
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-WORKDIR /var/www/html
+RUN composer global require hirak/prestissimo
 
 # Copy application files
-COPY src/ /var/www/html/
+WORKDIR /var/www/html
+COPY . /var/www/html
 
 # Set environment variable for Cloud Run
 ENV PORT=8080
