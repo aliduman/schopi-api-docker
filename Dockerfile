@@ -41,5 +41,5 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-# Use PHP built-in web server for Cloud Run
-CMD ["php", "-S", "0.0.0.0:8080"]
+# Use PHP built-in web server for Cloud Run - app klasöründen başlat
+CMD ["php", "-S", "0.0.0.0:8080", "-t", "app"]

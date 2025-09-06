@@ -1,5 +1,5 @@
 <?php
-require_once 'config/database.php';
+// Database config zaten ana index.php'de yükleniyor
 
 header('Content-Type: application/json');
 
