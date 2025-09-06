@@ -34,20 +34,27 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Copy application files - create the proper directory structure
-COPY src/ /var/www/html/src/
-RUN mkdir -p /var/www/html/public /var/www/html/app
+COPY src/ /var/www/html/
+WORKDIR /var/www/html/public
+RUN pwd && ls -la
 
-# Copy public files to the public directory
-RUN cp -rf /var/www/html/src/public/* /var/www/html/public/
-
-# Copy app files to the app directory
-RUN cp -rf /var/www/html/src/app/* /var/www/html/app/
+# Create app directory and copy app files
+RUN mkdir -p /var/www/html/app
+RUN if [ -d /var/www/html/src/app ]; then cp -rf /var/www/html/src/app/* /var/www/html/app/; fi
+RUN ls -la /var/www/html/app || echo "app directory not accessible"
 
 # Fix permissions
 RUN chmod -R 755 /var/www/html
 
+# Use our fixed index.php
+COPY src/public/index.php.fixed /var/www/html/public/index.php
+
 # Create a health check file
-COPY src/public/_healthz /var/www/html/public/_healthz
+RUN echo '<?php header("Content-Type: application/json"); echo json_encode(["status"=>"healthy"]);' > /var/www/html/public/_healthz
+
+# Create a startup script
+COPY start.sh /var/www/html/start.sh
+RUN chmod +x /var/www/html/start.sh
 
 # Create a startup script
 COPY start.sh /var/www/html/start.sh
@@ -59,6 +66,11 @@ RUN if [ ! -f "/var/www/html/app/bootstrap.php" ]; then \
     echo "Using fallback bootstrap.php"; \
     cp /var/www/html/app/bootstrap.php.fallback /var/www/html/app/bootstrap.php; \
 fi
+
+# Create symlinks to fix the directory structure issues
+RUN mkdir -p /var/www/html/public/../app
+RUN ln -sf /var/www/html/app /var/www/html/public/../app
+RUN ls -la /var/www/html/public/../
 
 # Set environment variable for Cloud Run
 ENV PORT=8080

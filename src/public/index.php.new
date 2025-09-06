@@ -1,0 +1,149 @@
+<?php
+/**
+ * Ana Giriş Noktası - Tüm istekler buradan yönlendirilir
+ * Modified to handle Cloud Run deployment
+ */
+
+// Enable error display for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Debug function to log information
+function debug_log($message) {
+    error_log('[INDEX DEBUG] ' . $message);
+}
+
+// Request URI'yi al
+$request_uri = $_SERVER['REQUEST_URI'];
+$script_name = $_SERVER['SCRIPT_NAME'];
+
+// Base path'i hesapla
+$base_path = dirname($script_name);
+if ($base_path === '/') {
+    $base_path = '';
+}
+
+// Request path'i temizle
+$request_path = $request_uri;
+if ($base_path !== '') {
+    $request_path = substr($request_uri, strlen($base_path));
+}
+
+// Query string'i kaldır
+$request_path = strtok($request_path, '?');
+
+// Handle health check requests immediately
+if ($request_path === '/_healthz' || $request_path === '/public/_healthz') {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'healthy',
+        'timestamp' => date('c'),
+        'server' => 'PHP/' . phpversion()
+    ]);
+    exit;
+}
+
+// Özel route'ları kontrol et
+$special_routes = [
+    '/health' => 'health.php',
+    '/health.php' => 'health.php',
+    '/db-test' => 'db-test.php',
+    '/db-test.php' => 'db-test.php',
+];
+
+// Try to locate the bootstrap file in multiple locations
+$bootstrap_paths = [
+    '../app/bootstrap.php',
+    '/var/www/html/app/bootstrap.php',
+    '/var/www/html/src/app/bootstrap.php',
+    __DIR__ . '/../app/bootstrap.php',
+    __DIR__ . '/../../app/bootstrap.php',
+];
+
+$bootstrap_file = null;
+foreach ($bootstrap_paths as $path) {
+    if (file_exists($path)) {
+        $bootstrap_file = $path;
+        debug_log("Found bootstrap file at: $path");
+        break;
+    }
+}
+
+// Özel route'ları kontrol et
+if (isset($special_routes[$request_path])) {
+    debug_log("Handling special route: $request_path");
+    
+    // Database config'i yükle - check multiple possible paths
+    $database_paths = [
+        '../app/config/database.php',
+        '/var/www/html/app/config/database.php',
+        '/var/www/html/src/app/config/database.php',
+        __DIR__ . '/../app/config/database.php',
+    ];
+    
+    $database_file = null;
+    foreach ($database_paths as $path) {
+        if (file_exists($path)) {
+            $database_file = $path;
+            debug_log("Found database config at: $path");
+            require_once $path;
+            break;
+        }
+    }
+    
+    if (!$database_file) {
+        debug_log("Database config file not found!");
+    }
+    
+    // Özel dosyayı include et
+    $special_file = __DIR__ . '/' . $special_routes[$request_path];
+    if (file_exists($special_file)) {
+        debug_log("Including special file: $special_file");
+        include $special_file;
+    } else {
+        debug_log("Special file not found: $special_file");
+        http_response_code(404);
+        echo json_encode(['error' => 'Special route file not found']);
+    }
+} else {
+    // CORS için başlıklar
+    header('Access-Control-Allow-Origin: *');
+    header('Content-Type: application/json');
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Max-Age: 1000');
+    header('Access-Control-Allow-Methods: GET, PUT, POST, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization, Access-Control-Max-Age, Access-Control-Allow-Credentials, Access-Control-Allow-Methods, Access-Control-Allow-Origin, Access-Control-Allow-Headers');
+    header('HTTP/1.1 200');
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        exit;
+    }
+
+    // Ana uygulamayı başlat (REST API)
+    if ($bootstrap_file) {
+        debug_log("Including bootstrap file: $bootstrap_file");
+        require_once $bootstrap_file;
+        
+        // Core sınıfını başlat
+        try {
+            debug_log("Initializing Core class");
+            $init = new Core();
+        } catch (Exception $e) {
+            debug_log("Core initialization error: " . $e->getMessage());
+            echo json_encode(['error' => $e->getMessage()]);
+            exit;
+        }
+    } else {
+        debug_log("Bootstrap file not found in any location!");
+        http_response_code(500);
+        echo json_encode([
+            'error' => 'Application bootstrap file not found',
+            'search_paths' => $bootstrap_paths,
+            'current_dir' => __DIR__,
+            'request_path' => $request_path
+        ]);
+        exit;
+    }
+}
+?>

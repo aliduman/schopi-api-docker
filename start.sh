@@ -7,31 +7,68 @@ echo "Starting PHP server on port ${PORT:-8080}"
 echo "Environment variables:"
 env | grep -v PASSWORD | sort
 
-# Check if files are in the expected locations
-echo "Checking file structure:"
-ls -la /var/www/html/
-echo "Checking public directory:"
-ls -la /var/www/html/public || echo "public directory not found!"
-echo "Checking app directory:"
-ls -la /var/www/html/app || echo "app directory not found!"
-echo "Checking bootstrap.php locations:"
-find /var/www/html -name "bootstrap.php" || echo "bootstrap.php not found!"
+# Move to the public directory and check structure
+cd /var/www/html
+echo "Current working directory: $(pwd)"
 
-# Create a symbolic link to fix relative paths
-if [ ! -L "/var/www/html/public/../app" ]; then
-  echo "Creating symbolic link for app directory..."
-  # Remove any existing directory first
-  rm -rf /var/www/html/public/../app 2>/dev/null
-  # Create the symbolic link
-  ln -sf /var/www/html/app /var/www/html/public/../app
-  echo "Symbolic link created"
+# Check if we have a proper directory structure
+echo "Checking file structure:"
+ls -la .
+echo "Checking public directory:"
+ls -la public || echo "public directory not found!"
+echo "Checking app directory:"
+ls -la app || echo "app directory not found!"
+echo "Checking bootstrap.php locations:"
+find . -name "bootstrap.php" || echo "bootstrap.php not found!"
+
+# If the structure is not correct, try to fix it
+if [ ! -d "app" ] && [ -d "src/app" ]; then
+  echo "Copying app directory from src..."
+  mkdir -p app
+  cp -rf src/app/* app/
+  echo "Directory structure after fix:"
+  ls -la app || echo "app directory still not accessible"
 fi
 
-# Debug: check if the symbolic link worked
-echo "Checking symbolic link:"
-ls -la /var/www/html/app || echo "Symbolic link failed!"
+# Create a simplified bootstrap file if missing
+if [ ! -f "app/bootstrap.php" ]; then
+  echo "Creating simplified bootstrap.php..."
+  mkdir -p app
+    cat > app/bootstrap.php <<'EOF'
+  <?php
+  define("APPROOT", dirname(__FILE__) . "/");
+  
+  class Core {
+      public function __construct() {
+          echo json_encode([
+              "status" => false,
+              "message" => "Bootstrap file missing"
+          ]);
+      }
+  }
+  
+  class Routing {
+      public $routes = [];
+      public function get($p, $h) {}
+      public function post($p, $h) {}
+      public function put($p, $h) {}
+      public function delete($p, $h) {}
+      public function auto($p, $h) {}
+  }
+  
+  class Api {}
+  class Database {}
+  class Model {}
+  class File {}
+  class Validate {}
+  class InvalidSignatureException extends Exception {}
+  class Jwt {}
+  EOF
+  echo "Created simplified bootstrap.php"
+fi
 
 # Start the PHP built-in web server
 echo "Starting PHP server..."
-cd /var/www/html/public
-php -S 0.0.0.0:${PORT:-8080} -t . 2>&1 | tee /var/www/html/php_server.log
+cd public
+echo "Serving from: $(pwd)"
+php -S 0.0.0.0:${PORT:-8080} -t .
