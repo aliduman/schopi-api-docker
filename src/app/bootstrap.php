@@ -14,8 +14,8 @@
 	 * based on the client request
 	 ***/
 	session_start();
-	require_once 'setup/configs/config.php';
-	require_once 'setup/helpers/Utilities.php';
+	require_once APPROOT . 'setup/configs/config.php';
+	require_once APPROOT . 'setup/helpers/Utilities.php';
 
 	/** Error Reporting */
 	if( ENVIRONMENT != "DEV" ){

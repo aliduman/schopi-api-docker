@@ -35,9 +35,9 @@ $special_routes = [
 
 // Özel route'ları kontrol et
 if (isset($special_routes[$request_path])) {
-    // Database config'i yükle
-    require_once '../app/config/database.php';
-    
+    // Database config'i yükle - göreceli yol yerine mutlak yol kullan
+    require_once __DIR__ . '/../app/config/database.php';
+
     // Özel dosyayı include et
     include __DIR__ . '/' . $special_routes[$request_path];
 } else {
