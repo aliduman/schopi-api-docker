@@ -24,7 +24,7 @@ steps:
       - '--port'
       - '8080'
       - '--set-env-vars'
-      - 'PORT=8080'
+      - 'PORT=8080,DB_HOST=34.56.16.173,DB_NAME=schopi-api,DB_USER=root,DB_PASSWORD=SchopiDB2024!'
     secretEnv: ['SERVICE_ACCOUNT_KEY']
 
 availableSecrets:
