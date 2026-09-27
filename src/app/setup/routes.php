@@ -125,6 +125,7 @@
     $routing->get("share_list/decline/:id", "ShareListAPI::decline_invite");
     $routing->post("share_list/user_invite/:email", "ShareListAPI::get_user_invites");
     $routing->delete("share_list/delete/:id", "ShareListAPI::delete_invite");
+    $routing->post("share_list/revoke/:id", "ShareListAPI::revoke_invite");
     $routing->get("share_list/by_email/:email", "ShareListAPI::get_invites_by_email");
     $routing->post("share_list/token_check", "ShareListAPI::is_token_check");
     $routing->get("share_list/get_share_list", "ShareListAPI::get_share_list");

@@ -35,6 +35,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy application files
 WORKDIR /var/www/html
 COPY . /var/www/html
+RUN cp php/php.ini /usr/local/etc/php/conf.d/zz-schopi.ini
 
 # Set environment variable for Cloud Run
 ENV PORT=8080

@@ -13,7 +13,13 @@
 	 * by calling the core constructor which will load the required controller
 	 * based on the client request
 	 ***/
-	session_start();
+	require_once APPROOT . 'setup/helpers/Env.php';
+	require_once APPROOT . 'setup/helpers/HttpSecurity.php';
+	require_once APPROOT . 'setup/helpers/PasswordPolicy.php';
+	require_once APPROOT . 'setup/helpers/ShareLinkPolicy.php';
+	// Kimlik Bearer JWT ile doğrulanır. CSRF yardımcıları oturum kullanır ama
+	// hiçbir route onları çağırmaz; PHPSESSID üretilmesin diye session_start yok.
+	HttpSecurity::configureSessionCookies();
 	require_once APPROOT . 'setup/configs/config.php';
 	require_once APPROOT . 'setup/helpers/Utilities.php';
 

@@ -2,7 +2,6 @@
 
 class Jwt
 {
-    private $secret_key = 'Sdw1';
     private $encrypt = ['HS256'];
     private $aud = null;
 

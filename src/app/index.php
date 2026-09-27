@@ -3,6 +3,10 @@
  * Ana Giriş Noktası - Tüm istekler buradan yönlendirilir
  */
 
+require_once __DIR__ . '/setup/helpers/Env.php';
+require_once __DIR__ . '/setup/helpers/HttpSecurity.php';
+HttpSecurity::bootstrapRequest();
+
 // Request URI'yi al
 $request_uri = $_SERVER['REQUEST_URI'];
 $script_name = $_SERVER['SCRIPT_NAME'];
