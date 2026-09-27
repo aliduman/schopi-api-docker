@@ -33,7 +33,7 @@ class ShareListAPI extends Api {
     
     // Share List Generate Token
     function generateShareToken($list_id, $inviter_id, $invitee_email) {
-        $JwtCtrl = new Jwt("Sdw1");
+        $JwtCtrl = new Jwt(Env::jwtSecret());
         $issueAt = time();
         $expirationTime = $issueAt + (60 * 60 * 24);
 
@@ -270,6 +270,16 @@ class ShareListAPI extends Api {
             $this->json(['status' => 'error', 'message' => 'Paylaşım kaydı bulunamadı']);
             return;
         }
+
+        $blockReason = ShareLinkPolicy::acceptanceBlockReason(
+            isset($shareData['status']) ? (string) $shareData['status'] : null,
+            isset($shareData['expired_date']) ? (string) $shareData['expired_date'] : null,
+            $this->shareTokenJwtExpiry(isset($shareData['token']) ? (string) $shareData['token'] : null)
+        );
+        if ($blockReason !== null) {
+            $this->json(['status' => 'error', 'message' => $blockReason]);
+            return;
+        }
         
         // 2. Normal güncelleme işlemlerini yap
         $updateResult = $this->ShareList->update_invite_status_and_list($id, [
@@ -327,6 +337,33 @@ class ShareListAPI extends Api {
         $this->json($this->ShareList->delete_share_list($this->id));
     }
 
+    // İptal: satır silinmez, token bir daha kabul edilmez.
+    public function revoke_invite() {
+        $id = $this->id ?? null;
+        if (empty($id)) {
+            $this->json(['status' => false, 'message' => 'ID eksik']);
+            return;
+        }
+
+        $shareData = $this->ShareList->get_share_with_list_data($id);
+        if (!$shareData) {
+            $this->json(['status' => false, 'message' => 'Paylaşım kaydı bulunamadı']);
+            return;
+        }
+
+        $actorId = $this->Authentication->userData['id'] ?? null;
+        if ($actorId === null || (string) $shareData['inviter_id'] !== (string) $actorId) {
+            $this->json(['status' => false, 'message' => 'Bu paylaşımı iptal etme yetkiniz yok'], 403);
+            return;
+        }
+
+        $this->ShareList->update_share_list(['status' => 'revoked'], $id);
+        $this->json([
+            'status' => true,
+            'message' => 'Paylaşım iptal edildi',
+        ]);
+    }
+
     // Get share list entries by email
     public function get_invites_by_email() {
         $email = $_GET['email'] ?? null;
@@ -334,8 +371,55 @@ class ShareListAPI extends Api {
     }
 
     public function is_token_check() {
-        $return = $this->ShareList->is_token_expired($this->request->token);
+        $token = isset($this->request->token) ? (string) $this->request->token : '';
+        $return = $this->ShareList->is_token_expired($token);
+        if (!is_array($return) || (isset($return['status']) && $return['status'] === false)) {
+            $this->json(['status' => false]);
+            return;
+        }
+
+        $row = $return[0] ?? null;
+        $status = null;
+        $expiredDate = null;
+        if (is_object($row)) {
+            $status = $row->status ?? null;
+            $expiredDate = $row->expired_date ?? null;
+        } elseif (is_array($row)) {
+            $status = $row['status'] ?? null;
+            $expiredDate = $row['expired_date'] ?? null;
+        }
+
+        $allowed = ShareLinkPolicy::tokenCheckAllowed(
+            $status !== null ? (string) $status : null,
+            $expiredDate !== null ? (string) $expiredDate : null,
+            $this->shareTokenJwtExpiry($token)
+        );
+        if (!$allowed) {
+            $this->json(['status' => false]);
+            return;
+        }
+
         $this->json($return);
+    }
+
+    /**
+     * JWT paylaşım token'ında exp varsa unix zamanı döner.
+     * İmzası geçersizse 0 (süresi dolmuş sayılır). Ham token'da null.
+     */
+    private function shareTokenJwtExpiry(?string $token): ?int
+    {
+        if ($token === null || substr_count($token, '.') !== 2) {
+            return null;
+        }
+        try {
+            $payload = (new Jwt(Env::jwtSecret()))->decode($token);
+        } catch (Throwable $e) {
+            return 0;
+        }
+        if (!isset($payload['exp'])) {
+            return null;
+        }
+        return (int) $payload['exp'];
     }
 }
 

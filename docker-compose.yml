@@ -10,7 +10,6 @@ services:
       - DB_HOST=34.56.16.173
       - DB_NAME=schopi-api
       - DB_USER=root
-          # - DB_PASSWORD=SchopiDB2024!   # Moved to secrets
         restart: unless-stopped
         volumes:
           - ./src:/var/www/html/src

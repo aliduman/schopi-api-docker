@@ -106,6 +106,8 @@
 				$response_code = 404;
 			}
 
+			header_remove('X-Powered-By');
+
 			# Set the response code
 			http_response_code($response_code);
 

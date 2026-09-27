@@ -256,7 +256,7 @@ class ShareList extends Model {
 
      // Validate Token
     public function is_token_expired($token) {
-        $sql = "SELECT * FROM " . $this->table_name . " WHERE token = :token AND expired_date > NOW()";
+        $sql = "SELECT * FROM " . $this->table_name . " WHERE token = :token AND expired_date > NOW() AND status NOT IN ('revoked', 'declined')";
         $this->query($sql);
         $this->bind(':token', $token);
         $results = $this->resultset();

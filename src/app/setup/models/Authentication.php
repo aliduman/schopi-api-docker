@@ -45,7 +45,7 @@ class Authentication extends Model
 
     public function authenticateJWTToken(): bool
     {
-        $JwtCtrl = new Jwt("Sdw1");
+        $JwtCtrl = new Jwt(Env::jwtSecret());
 
         $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? null;
         if ($authHeader === null) {
@@ -115,8 +115,7 @@ class Authentication extends Model
                 "id" => $user_data->id,
                 "name" => $user_data->name,
             ];
-            $secret_key = "Sdw1";
-            $JwtController = new Jwt($secret_key);
+            $JwtController = new Jwt(Env::jwtSecret());
 
             $token =$JwtController->encode($payload);
 
@@ -210,8 +209,7 @@ class Authentication extends Model
             "exp"  => time() + (60 * 60)
         ];
 
-        //$secret_key = "Sdw1";
-        $JwtCtrl = new Jwt("Sdw1");
+        $JwtCtrl = new Jwt(Env::jwtSecret());
         $token = $JwtCtrl->encode($payload);
 
         // Save token to database
@@ -668,7 +666,7 @@ class Authentication extends Model
                 "name" => $user->name,
                 "surname" => $user->surname,
             ];
-            $JwtCtrl = new Jwt("Sdw1");
+            $JwtCtrl = new Jwt(Env::jwtSecret());
             $token = $JwtCtrl->encode($payload);
     
             // Token güncelle
@@ -692,7 +690,7 @@ class Authentication extends Model
             $payload = [
                 "id" => null, // Başlangıçta id null
             ];
-            $JwtCtrl = new Jwt("Sdw1");
+            $JwtCtrl = new Jwt(Env::jwtSecret());
             $token = $JwtCtrl->encode($payload);
             
             // Yeni kullanıcı verisini oluştur

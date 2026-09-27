@@ -63,6 +63,8 @@
 
 		/* Register User Function */
 		public function register(){
+            $this->assertPasswordPolicy($this->request("password"), true);
+
             new Validate([
                 [
                     # The value to be checked
@@ -81,7 +83,7 @@
                     "value" => $this->request("password"),
                     "key"	=> "password",
                     "label"	=> "Password",
-                    "checks" => "required|min:2|max:150"
+                    "checks" => "required|min:8|max:150"
                 ],
                 [
                     "value" => $this->request("name"),
@@ -178,8 +180,7 @@
                         "id" => $new_guest_user['id'],
                         "name" => $new_guest_user['name'],
                     ];
-                    $secret_key = "Sdw1";
-                    $JwtController = new Jwt($secret_key);
+                    $JwtController = new Jwt(Env::jwtSecret());
 
                     $token = $JwtController->encode($payload);
 
@@ -222,6 +223,7 @@
             $surname = $this->request("surname");
             $email = $this->request("email");
             $password = $this->request("password");
+            $this->assertPasswordPolicy($password);
             
             // Gerekli parametrelerle güncelleme fonksiyonunu çağır
             $user = $this->Authentication->update_guest_register_user($user_id, $name, $surname, $email, $password);
@@ -311,6 +313,7 @@
         {
             $token = $this->request->token;
             $password = $this->request->password;
+            $this->assertPasswordPolicy($password);
             $user = $this->Authentication->change_password_by_token($token, $password);
             if ($user) {
                 $this->json([
@@ -340,7 +343,7 @@
             $id = $this->request->id;
             $old_password = $this->request->old_password;
             $password = $this->request->password;
-            //var_dump($id, $old_password, $password);
+            $this->assertPasswordPolicy($password);
 
             $user = $this->Authentication->change_password($id,$old_password,$password);
             if ($user) {
@@ -420,8 +423,12 @@
             -F text='This will be the text-only version' \
             --form-string html='<html><body><p>This is the HTML version</p></body></html>'*/
 
-            $apiKey = $_ENV['MAILGUN_API_KEY'] ?? "your-mailgun-api-key";
-            $domain = "sandbox4afb7dcf14794c85b652b51aa53a70c4.mailgun.org";
+            $apiKey = Env::get('MAILGUN_API_KEY', '');
+            $domain = Env::get('MAILGUN_DOMAIN', '');
+            if ($apiKey === '' || $domain === '') {
+                error_log('Mailgun is not configured');
+                return false;
+            }
 
             $ch = curl_init();
             $email_from = "Excited User <nd__86@hotmail.com>";
@@ -531,6 +538,8 @@
                 ]);
                 return;
             }
+
+            $this->assertPasswordPolicy($new_password);
 
             // Kullanıcıyı email adresine göre bul.
             $userResponse = $this->Authentication->get_user_by_email($email); // Doğru değişken adı
@@ -762,6 +771,37 @@
                     "message" => "An unexpected error occurred: " . $e->getMessage()
                 ]);
             }
+        }
+
+        /**
+         * Kayıt, sıfırlama ve şifre değiştirmede aynı kural.
+         * $asValidationError kayıt yanıtındaki errors nesnesini korur.
+         */
+        private function assertPasswordPolicy($password, $asValidationError = false): void
+        {
+            $message = PasswordPolicy::violation(is_string($password) ? $password : '');
+            if ($message === null) {
+                return;
+            }
+            if ($asValidationError) {
+                http_response_code(400);
+                header_remove('X-Powered-By');
+                echo json_encode([
+                    'status' => false,
+                    'message' => $message,
+                    'errors' => [
+                        'password' => [
+                            'valid' => false,
+                            'message' => $message,
+                        ],
+                    ],
+                ]);
+                exit;
+            }
+            $this->json([
+                'status' => false,
+                'message' => $message,
+            ], 400);
         }
 	}
 
